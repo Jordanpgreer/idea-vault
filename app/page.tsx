@@ -72,6 +72,9 @@ export default function HomePage() {
               <Link href="/submit" className="btn primary">
                 Submit Idea for $1
               </Link>
+              <Link href="/dashboard" className="btn">
+                View Dashboard
+              </Link>
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">
@@ -80,9 +83,6 @@ export default function HomePage() {
                 </button>
               </SignInButton>
             </SignedOut>
-            <Link href="/dashboard" className="btn">
-              View Dashboard
-            </Link>
           </div>
         </article>
         <article
@@ -469,6 +469,9 @@ export default function HomePage() {
               <Link href="/submit" className="btn primary">
                 Submit Your First Idea
               </Link>
+              <Link href="/dashboard" className="btn">
+                Go to Dashboard
+              </Link>
             </SignedIn>
             <SignedOut>
               <SignInButton mode="modal">
@@ -477,9 +480,6 @@ export default function HomePage() {
                 </button>
               </SignInButton>
             </SignedOut>
-            <Link href="/dashboard" className="btn">
-              Go to Dashboard
-            </Link>
           </div>
         </div>
       </section>

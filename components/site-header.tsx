@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
 
-const navItems: Array<{ href: string; label: string }> = [
-  { href: "/", label: "Home" },
+const publicNavItems: Array<{ href: string; label: string }> = [
+  { href: "/", label: "Home" }
+];
+
+const signedInNavItems: Array<{ href: string; label: string }> = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/submit", label: "Submit Idea" },
   { href: "/messages", label: "Messages" }
@@ -71,7 +74,7 @@ export function SiteHeader() {
           </strong>
         </Link>
         <nav style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", justifyContent: "flex-end", alignItems: "center" }}>
-          {navItems.map((item) => (
+          {publicNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href as any}
@@ -86,6 +89,23 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
+          <SignedIn>
+            {signedInNavItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href as any}
+                className="pill"
+                style={{
+                  fontSize: "0.85rem",
+                  color: "var(--text-soft)",
+                  padding: "0.5rem 1rem",
+                  fontWeight: 600
+                }}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </SignedIn>
           <SignedIn>
             <Link
               href="/admin/review"
