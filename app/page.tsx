@@ -1,7 +1,30 @@
+"use client";
+
 import Link from "next/link";
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut, useAuth } from "@clerk/nextjs";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const trustPoints = ["$1 per idea", "Private submissions", "10% profit share", "No pitch deck required"];
+
+const exampleIdeas = [
+  {
+    title: "Neighborhood EV charging membership",
+    description: "Residents subscribe to guaranteed overnight charging slots using privately hosted curbside chargers."
+  },
+  {
+    title: "AI-powered meal prep delivery",
+    description: "Weekly personalized meal kits based on dietary preferences, fitness goals, and real-time health data."
+  },
+  {
+    title: "Remote work space marketplace",
+    description: "Book quiet, professional workspaces by the hour in residential neighborhoods near you."
+  },
+  {
+    title: "Subscription box for local goods",
+    description: "Curated monthly boxes featuring products from small businesses in your city, with rotating themes."
+  }
+];
 
 const steps = [
   {
@@ -14,7 +37,7 @@ const steps = [
   },
   {
     title: "Earn from selected ideas",
-    description: "If we build your chosen idea, you receive 10% of business profit under terms."
+    description: "If we build your idea, you receive 10% of the business's profit under our terms."
   }
 ];
 
@@ -34,8 +57,38 @@ const faqs = [
 ];
 
 export default function HomePage() {
+  const { isLoaded, userId } = useAuth();
+  const router = useRouter();
+  const [currentIdeaIndex, setCurrentIdeaIndex] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (userId) {
+      router.replace("/auth/redirect");
+    }
+  }, [isLoaded, userId, router]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setCurrentIdeaIndex((prev) => (prev + 1) % exampleIdeas.length);
+        setIsTransitioning(false);
+      }, 300);
+    }, 6000); // Slower cycling: 6 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  if (isLoaded && userId) {
+    return null;
+  }
+
+  const currentIdea = exampleIdeas[currentIdeaIndex];
+
   return (
-    <div className="shell" style={{ display: "grid", gap: "2rem", paddingBottom: "3rem" }}>
+    <div className="shell" style={{ display: "grid", gap: "2rem", paddingBottom: "3rem", position: "relative", zIndex: 1 }}>
       <section
         style={{
           marginTop: "2rem",
@@ -56,7 +109,7 @@ export default function HomePage() {
               fontWeight: 700
             }}
           >
-            Submit once. Earn for outcomes.
+            Submit once. Earn ongoing profits.
           </p>
           <h1 className="page-title" style={{ marginTop: "1.5rem", maxWidth: "16ch" }}>
             Business ideas for $1.
@@ -77,11 +130,9 @@ export default function HomePage() {
               </Link>
             </SignedIn>
             <SignedOut>
-              <SignInButton mode="modal">
-                <button className="btn primary" type="button">
-                  Get Started
-                </button>
-              </SignInButton>
+              <Link href="/sign-up" className="btn primary">
+                Get Started
+              </Link>
             </SignedOut>
           </div>
         </article>
@@ -117,7 +168,10 @@ export default function HomePage() {
                 borderRadius: "16px",
                 padding: "1.2rem",
                 background: "#ffffff",
-                boxShadow: "0 4px 20px rgba(99, 102, 241, 0.08)"
+                boxShadow: "0 4px 20px rgba(99, 102, 241, 0.08)",
+                transition: "opacity 0.3s ease, transform 0.3s ease",
+                opacity: isTransitioning ? 0 : 1,
+                transform: isTransitioning ? "translateY(10px)" : "translateY(0)"
               }}
             >
               <p
@@ -133,10 +187,10 @@ export default function HomePage() {
                 Idea Preview
               </p>
               <h3 style={{ marginTop: "0.6rem", marginBottom: "0.7rem", fontSize: "1.15rem", color: "var(--text)" }}>
-                Neighborhood EV charging membership
+                {currentIdea.title}
               </h3>
               <p style={{ margin: 0, color: "var(--text-soft)", fontSize: "0.95rem", lineHeight: "1.6" }}>
-                Residents subscribe to guaranteed overnight charging slots using privately hosted curbside chargers.
+                {currentIdea.description}
               </p>
               <div style={{ display: "flex", gap: "0.6rem", marginTop: "1rem", flexWrap: "wrap" }}>
                 <span
@@ -160,6 +214,41 @@ export default function HomePage() {
                   Eligible for 10% share
                 </span>
               </div>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "0.5rem",
+                marginTop: "1.2rem"
+              }}
+            >
+              {exampleIdeas.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setIsTransitioning(true);
+                    setTimeout(() => {
+                      setCurrentIdeaIndex(index);
+                      setIsTransitioning(false);
+                    }, 300);
+                  }}
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    border: "none",
+                    background:
+                      index === currentIdeaIndex
+                        ? "linear-gradient(135deg, #6366f1, #ec4899)"
+                        : "rgba(99, 102, 241, 0.2)",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                    padding: 0
+                  }}
+                  aria-label={`View idea ${index + 1}`}
+                />
+              ))}
             </div>
           </div>
         </article>
@@ -459,7 +548,7 @@ export default function HomePage() {
               marginBottom: "1.2rem"
             }}
           >
-            One dollar can become recurring upside.
+            One dollar can become ongoing profit.
           </h2>
           <p className="page-subtitle" style={{ margin: "0 auto 2rem", maxWidth: "56ch" }}>
             Create your account, submit your best business idea, and track your status from your dashboard.
@@ -474,11 +563,9 @@ export default function HomePage() {
               </Link>
             </SignedIn>
             <SignedOut>
-              <SignInButton mode="modal">
-                <button className="btn primary" type="button">
-                  Create Free Account
-                </button>
-              </SignInButton>
+              <Link href="/sign-up" className="btn primary">
+                Create Free Account
+              </Link>
             </SignedOut>
           </div>
         </div>

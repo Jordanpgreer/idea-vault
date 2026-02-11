@@ -1,18 +1,55 @@
 "use client";
 
 import { useState } from "react";
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
+import Link from "next/link";
 
 const price = "$1.00";
 
 export default function SubmitIdeaPage() {
   const [state, setState] = useState<"idle" | "saving" | "ready">("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [savedIdeaId, setSavedIdeaId] = useState<string | null>(null);
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setState("saving");
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    setState("ready");
+    setErrorMessage(null);
+    setSavedIdeaId(null);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const payload = {
+      title: String(formData.get("title") ?? ""),
+      summary: String(formData.get("summary") ?? ""),
+      details: String(formData.get("details") ?? "")
+    };
+
+    try {
+      const response = await fetch("/api/ideas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const result = (await response.json().catch(() => ({}))) as {
+        idea?: { id?: string };
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.error ?? "Unable to save your draft right now.");
+      }
+
+      setSavedIdeaId(typeof result.idea?.id === "string" ? result.idea.id : null);
+      setState("ready");
+      form.reset();
+    } catch (error) {
+      setState("idle");
+      setErrorMessage(error instanceof Error ? error.message : "Unable to save your draft right now.");
+    }
   }
 
   return (
@@ -91,11 +128,9 @@ export default function SubmitIdeaPage() {
           <p className="page-subtitle" style={{ margin: "1rem auto 2rem", maxWidth: "52ch" }}>
             Idea submission is only available for authenticated users. Create an account or sign in to continue.
           </p>
-          <SignInButton mode="modal">
-            <button className="btn primary" type="button">
-              Sign In to Submit
-            </button>
-          </SignInButton>
+          <Link href="/sign-in" className="btn primary">
+            Sign In to Submit
+          </Link>
         </section>
       </SignedOut>
 
@@ -158,8 +193,22 @@ export default function SubmitIdeaPage() {
                 }}
               >
                 <p style={{ margin: 0, color: "var(--success)", fontWeight: 600 }}>
-                  Draft saved. Next step is Stripe Checkout, then webhook marks idea as submitted.
+                  Draft saved{savedIdeaId ? ` (${savedIdeaId})` : ""}. Next step is Stripe Checkout, then webhook marks
+                  idea as submitted.
                 </p>
+              </div>
+            ) : null}
+
+            {errorMessage ? (
+              <div
+                style={{
+                  padding: "1rem",
+                  borderRadius: "16px",
+                  background: "linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.14))",
+                  border: "2px solid rgba(239, 68, 68, 0.2)"
+                }}
+              >
+                <p style={{ margin: 0, color: "var(--danger)", fontWeight: 600 }}>{errorMessage}</p>
               </div>
             ) : null}
           </form>

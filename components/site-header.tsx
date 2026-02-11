@@ -1,21 +1,36 @@
 import Link from "next/link";
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
+import { auth, currentUser } from "@clerk/nextjs/server";
+import { isAdminUser } from "@/lib/authz";
+import { AccountMenu } from "@/components/account-menu";
+import { ThemeToggle } from "@/components/theme-toggle";
 
-const publicNavItems: Array<{ href: string; label: string }> = [
-  { href: "/", label: "Home" }
-];
+const publicNavItems: Array<{ href: string; label: string }> = [{ href: "/", label: "Home" }];
 
-const signedInNavItems: Array<{ href: string; label: string }> = [
+const userNavItems: Array<{ href: string; label: string }> = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/dashboard/achievements", label: "Achievements" },
   { href: "/submit", label: "Submit Idea" },
   { href: "/messages", label: "Messages" }
 ];
 
-export function SiteHeader() {
+const adminNavItems: Array<{ href: string; label: string }> = [
+  { href: "/admin", label: "Admin Dashboard" },
+  { href: "/admin/messages", label: "Message Center" },
+  { href: "/admin/review", label: "Review Queue" }
+];
+
+export async function SiteHeader() {
+  const { userId } = await auth();
+  const user = userId ? await currentUser() : null;
+  const showAdminNav = isAdminUser(user);
+  const brandHref = showAdminNav ? "/admin" : "/";
+  const visiblePublicNavItems = userId ? [] : publicNavItems;
+
   return (
-    <header style={{ position: "sticky", top: 0, zIndex: 40, backdropFilter: "blur(12px)" }}>
+    <header className="site-header" style={{ position: "sticky", top: 0, zIndex: 40, backdropFilter: "blur(12px)" }}>
       <div
-        className="shell glass"
+        className="shell glass site-header-frame"
         style={{
           marginTop: "1rem",
           padding: "1rem 1.2rem",
@@ -27,7 +42,8 @@ export function SiteHeader() {
         }}
       >
         <Link
-          href="/"
+          href={brandHref as any}
+          className="site-header-brand"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -36,6 +52,7 @@ export function SiteHeader() {
           }}
         >
           <div
+            className="site-header-logo"
             style={{
               width: "40px",
               height: "40px",
@@ -57,9 +74,10 @@ export function SiteHeader() {
                 animation: "shine-logo 3s infinite"
               }}
             />
-            <span style={{ fontSize: "1.3rem", position: "relative", zIndex: 1 }}>💡</span>
+            <span style={{ fontSize: "1.3rem", position: "relative", zIndex: 1 }}>{"\uD83D\uDCA1"}</span>
           </div>
           <strong
+            className="site-header-title"
             style={{
               letterSpacing: "0.01em",
               fontSize: "1.15rem",
@@ -70,11 +88,15 @@ export function SiteHeader() {
               fontWeight: 800
             }}
           >
-            Idea Vault
+            {showAdminNav ? "Idea Vault - Admin" : "Idea Vault"}
           </strong>
         </Link>
-        <nav style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", justifyContent: "flex-end", alignItems: "center" }}>
-          {publicNavItems.map((item) => (
+
+        <nav
+          className="site-header-nav"
+          style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap", justifyContent: "flex-end", alignItems: "center" }}
+        >
+          {visiblePublicNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href as any}
@@ -90,7 +112,7 @@ export function SiteHeader() {
             </Link>
           ))}
           <SignedIn>
-            {signedInNavItems.map((item) => (
+            {(showAdminNav ? adminNavItems : userNavItems).map((item) => (
               <Link
                 key={item.href}
                 href={item.href as any}
@@ -106,51 +128,31 @@ export function SiteHeader() {
               </Link>
             ))}
           </SignedIn>
-          <SignedIn>
+          <ThemeToggle />
+          <SignedOut>
             <Link
-              href="/admin/review"
-              className="pill"
+              href="/sign-in"
+              className="btn"
               style={{
-                fontSize: "0.85rem",
-                color: "var(--secondary)",
-                background: "linear-gradient(135deg, rgba(236, 72, 153, 0.1), rgba(236, 72, 153, 0.15))",
-                borderColor: "rgba(236, 72, 153, 0.3)",
-                fontWeight: 600
+                padding: "0.6rem 1.2rem",
+                fontSize: "0.9rem"
               }}
             >
-              Admin
+              Sign In
             </Link>
-          </SignedIn>
-          <SignedOut>
-            <SignInButton mode="modal">
-              <button
-                className="btn"
-                type="button"
-                style={{
-                  padding: "0.6rem 1.2rem",
-                  fontSize: "0.9rem"
-                }}
-              >
-                Sign In
-              </button>
-            </SignInButton>
-            <SignUpButton mode="modal">
-              <button
-                className="btn primary"
-                type="button"
-                style={{
-                  padding: "0.6rem 1.2rem",
-                  fontSize: "0.9rem"
-                }}
-              >
-                Sign Up
-              </button>
-            </SignUpButton>
+            <Link
+              href="/sign-up"
+              className="btn primary"
+              style={{
+                padding: "0.6rem 1.2rem",
+                fontSize: "0.9rem"
+              }}
+            >
+              Sign Up
+            </Link>
           </SignedOut>
           <SignedIn>
-            <div style={{ marginLeft: "0.3rem" }}>
-              <UserButton afterSignOutUrl="/" />
-            </div>
+            <AccountMenu dashboardHref={showAdminNav ? "/admin" : "/dashboard"} />
           </SignedIn>
         </nav>
       </div>

@@ -11,6 +11,26 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var mode = localStorage.getItem('idea-vault-theme');
+                  if (mode === 'night') {
+                    document.documentElement.setAttribute('data-theme', 'night');
+                  } else {
+                    document.documentElement.setAttribute('data-theme', 'day');
+                  }
+                } catch (e) {
+                  document.documentElement.setAttribute('data-theme', 'day');
+                }
+              })();
+            `
+          }}
+        />
+      </head>
       <body>
         <ClerkProvider>
           <SiteHeader />

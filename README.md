@@ -47,3 +47,4 @@ npm run dev
 - Payment verification must happen in Stripe webhook before marking an idea as paid/submitted.
 - Replace mock data/services with real Supabase + Clerk in production.
 - See `docs/IMPLEMENTATION_PLAN.md` and `db/schema.sql`.
+- Admin access is controlled by Clerk `publicMetadata.role = "admin"` or by listing emails in `ADMIN_EMAILS` in `.env.local`.
