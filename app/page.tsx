@@ -88,7 +88,7 @@ export default function HomePage() {
   const currentIdea = exampleIdeas[currentIdeaIndex];
 
   return (
-    <div className="shell" style={{ display: "grid", gap: "2rem", paddingBottom: "3rem", position: "relative", zIndex: 1 }}>
+    <div className="shell landing-page" style={{ display: "grid", gap: "2rem", paddingBottom: "3rem", position: "relative", zIndex: 1 }}>
       <section
         style={{
           marginTop: "2rem",
@@ -137,23 +137,25 @@ export default function HomePage() {
           </div>
         </article>
         <article
-          className="glass shine"
+          className="glass shine landing-preview-shell"
           style={{
             padding: "1.5rem",
-            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 244, 255, 0.9))",
+            background: "linear-gradient(135deg, color-mix(in srgb, var(--panel) 90%, transparent), color-mix(in srgb, var(--bg-soft) 92%, transparent))",
             animation: "fadeInUp 0.6s ease-out 0.2s backwards"
           }}
         >
           <div
+            className="landing-preview-frame"
             style={{
               border: "2px solid rgba(99, 102, 241, 0.1)",
               borderRadius: "20px",
               padding: "1.2rem",
-              background: "rgba(251, 252, 255, 0.8)",
+              background: "color-mix(in srgb, var(--panel-soft) 84%, transparent)",
               backdropFilter: "blur(10px)"
             }}
           >
             <div
+              className="landing-preview-card"
               style={{
                 width: "70px",
                 height: "10px",
@@ -167,7 +169,7 @@ export default function HomePage() {
                 border: "2px solid rgba(99, 102, 241, 0.15)",
                 borderRadius: "16px",
                 padding: "1.2rem",
-                background: "#ffffff",
+                background: "var(--panel)",
                 boxShadow: "0 4px 20px rgba(99, 102, 241, 0.08)",
                 transition: "opacity 0.3s ease, transform 0.3s ease",
                 opacity: isTransitioning ? 0 : 1,
@@ -265,7 +267,7 @@ export default function HomePage() {
         {trustPoints.map((item, index) => (
           <article
             key={item}
-            className="glass"
+            className="glass landing-feature-card"
             style={{
               padding: "1.5rem",
               textAlign: "center",
@@ -337,7 +339,7 @@ export default function HomePage() {
       </section>
 
       <section
-        className="glass"
+        className="glass landing-workflow"
         style={{
           padding: "2.5rem",
           background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(240, 244, 255, 0.95))",
@@ -377,6 +379,7 @@ export default function HomePage() {
           {steps.map((step, index) => (
             <article
               key={step.title}
+              className="landing-step-card"
               style={{
                 padding: "1.8rem",
                 border: "2px solid rgba(99, 102, 241, 0.15)",
@@ -441,7 +444,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="glass" style={{ padding: "2.5rem", marginTop: "2rem" }}>
+      <section className="glass landing-faq" style={{ padding: "2.5rem", marginTop: "2rem" }}>
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
           <h2
             style={{
@@ -462,6 +465,7 @@ export default function HomePage() {
           {faqs.map((faq, index) => (
             <article
               key={faq.q}
+              className="landing-faq-card"
               style={{
                 padding: "1.8rem",
                 borderRadius: "20px",
