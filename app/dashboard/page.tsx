@@ -38,6 +38,8 @@ export default function DashboardPage() {
   const [achievementRates, setAchievementRates] = useState<AchievementRateMap>({});
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [checkoutIdeaId, setCheckoutIdeaId] = useState<string | null>(null);
+  const [checkoutActionError, setCheckoutActionError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -157,6 +159,33 @@ export default function DashboardPage() {
 
   const recentMessages = myMessages.slice(0, 3);
   const recentIdeas = myIdeas.slice(0, 5);
+
+  async function onCompleteCheckout(ideaId: string) {
+    if (checkoutIdeaId) return;
+
+    setCheckoutIdeaId(ideaId);
+    setCheckoutActionError(null);
+
+    try {
+      const response = await fetch("/api/checkout/session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ ideaId })
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!response.ok || !payload.url) {
+        throw new Error(payload.error ?? "Unable to open checkout right now.");
+      }
+
+      window.location.assign(payload.url);
+    } catch (error) {
+      setCheckoutIdeaId(null);
+      setCheckoutActionError(error instanceof Error ? error.message : "Unable to open checkout right now.");
+    }
+  }
 
   return (
     <div className="shell grid" style={{ gap: "1.5rem", paddingTop: "1rem", paddingBottom: "2rem" }}>
@@ -337,8 +366,52 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="grid" style={{ gap: "0.8rem", marginTop: "0.9rem" }}>
+                  {checkoutActionError ? (
+                    <div
+                      style={{
+                        padding: "0.8rem",
+                        borderRadius: "12px",
+                        background: "linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.14))",
+                        border: "1px solid rgba(239, 68, 68, 0.25)",
+                        color: "var(--danger)",
+                        fontWeight: 600
+                      }}
+                    >
+                      {checkoutActionError}
+                    </div>
+                  ) : null}
                   {recentIdeas.map((idea) => {
                     const entry = statusMeta[idea.status];
+                    const stagePalette = [
+                      {
+                        bg: "linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(99, 102, 241, 0.1))",
+                        border: "rgba(99, 102, 241, 0.45)",
+                        color: "var(--primary)"
+                      },
+                      {
+                        bg: "linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(249, 115, 22, 0.12))",
+                        border: "rgba(245, 158, 11, 0.45)",
+                        color: "var(--warning)"
+                      },
+                      {
+                        bg: "linear-gradient(135deg, rgba(6, 182, 212, 0.22), rgba(34, 211, 238, 0.12))",
+                        border: "rgba(6, 182, 212, 0.45)",
+                        color: "var(--accent)"
+                      },
+                      {
+                        bg: "linear-gradient(135deg, rgba(16, 185, 129, 0.22), rgba(34, 197, 94, 0.12))",
+                        border: "rgba(16, 185, 129, 0.45)",
+                        color: "var(--success)"
+                      }
+                    ] as const;
+                    const progressMap: Record<Idea["status"], number> = {
+                      draft: 25,
+                      payment_pending: 45,
+                      submitted: 72,
+                      approved_initial: 100,
+                      rejected: 100
+                    };
+                    const progress = progressMap[idea.status];
                     return (
                       <article
                         key={idea.id}
@@ -377,9 +450,33 @@ export default function DashboardPage() {
 
                         <p style={{ margin: "0.45rem 0 0", color: "var(--text-soft)", fontSize: "0.9rem" }}>{idea.summary}</p>
 
+                        <div style={{ marginTop: "0.7rem" }}>
+                          <div
+                            style={{
+                              height: "10px",
+                              borderRadius: "999px",
+                              background: "var(--journey-stage-bg)",
+                              border: "1px solid var(--journey-stage-border)",
+                              overflow: "hidden"
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: `${progress}%`,
+                                height: "100%",
+                                background: "var(--gradient-ocean)"
+                              }}
+                            />
+                          </div>
+                          <p style={{ margin: "0.35rem 0 0", color: "var(--text-soft)", fontSize: "0.82rem", fontWeight: 600 }}>
+                            Progress: {progress}%
+                          </p>
+                        </div>
+
                         <div style={{ marginTop: "0.75rem", display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "0.45rem" }}>
                           {journeyStages.map((stage, index) => {
                             const isReached = index + 1 <= entry.checkpoint;
+                            const stageTone = stagePalette[index] ?? stagePalette[0];
                             return (
                               <div
                                 key={stage.id}
@@ -389,9 +486,9 @@ export default function DashboardPage() {
                                   textAlign: "center",
                                   fontSize: "0.77rem",
                                   fontWeight: 700,
-                                  background: isReached ? `${entry.color}22` : "var(--journey-stage-bg)",
-                                  border: `1px solid ${isReached ? `${entry.color}60` : "var(--journey-stage-border)"}`,
-                                  color: isReached ? entry.color : "var(--text-muted)"
+                                  background: isReached ? stageTone.bg : "var(--journey-stage-bg)",
+                                  border: `1px solid ${isReached ? stageTone.border : "var(--journey-stage-border)"}`,
+                                  color: isReached ? stageTone.color : "var(--text-muted)"
                                 }}
                               >
                                 {stage.label}
@@ -403,6 +500,22 @@ export default function DashboardPage() {
                         <p style={{ margin: "0.6rem 0 0", color: "var(--text-muted)", fontSize: "0.82rem" }}>
                           Next: {entry.nextStep}
                         </p>
+
+                        {(idea.status === "draft" || idea.status === "payment_pending") && (
+                          <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+                            <button
+                              className="btn success"
+                              type="button"
+                              onClick={() => onCompleteCheckout(idea.id)}
+                              disabled={checkoutIdeaId === idea.id}
+                            >
+                              {checkoutIdeaId === idea.id ? "Redirecting..." : "Pay $1 and Submit"}
+                            </button>
+                            <Link href="/submit" className="btn">
+                              Edit in Submit Form
+                            </Link>
+                          </div>
+                        )}
                       </article>
                     );
                   })}

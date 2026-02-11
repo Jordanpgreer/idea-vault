@@ -181,7 +181,7 @@ export async function POST(request: Request) {
       title,
       summary,
       details,
-      status: "payment_pending"
+      status: "draft"
     })
     .select("id, title, summary, details, status, created_at, updated_at")
     .single<IdeaRow>();

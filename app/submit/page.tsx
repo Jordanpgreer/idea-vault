@@ -1,20 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import Link from "next/link";
 
 const price = "$1.00";
 
 export default function SubmitIdeaPage() {
-  const [state, setState] = useState<"idle" | "saving" | "ready">("idle");
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const [state, setState] = useState<"idle" | "saving" | "ready" | "checkout">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedIdeaId, setSavedIdeaId] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  async function saveIdea(payload: { title: string; summary: string; details: string }) {
+    const response = await fetch("/api/ideas", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = (await response.json().catch(() => ({}))) as {
+      idea?: { id?: string };
+      error?: string;
+    };
+
+    if (!response.ok) {
+      throw new Error(result.error ?? "Unable to save your draft right now.");
+    }
+
+    return typeof result.idea?.id === "string" ? result.idea.id : null;
+  }
+
+  async function startCheckout(ideaId: string) {
+    const response = await fetch("/api/checkout/session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ ideaId })
+    });
+
+    const result = (await response.json().catch(() => ({}))) as {
+      url?: string;
+      error?: string;
+    };
+
+    if (!response.ok || !result.url) {
+      throw new Error(result.error ?? "Unable to start checkout right now.");
+    }
+
+    window.location.assign(result.url);
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setState("saving");
     setErrorMessage(null);
+    setCheckoutError(null);
     setSavedIdeaId(null);
 
     const form = event.currentTarget;
@@ -26,29 +71,56 @@ export default function SubmitIdeaPage() {
     };
 
     try {
-      const response = await fetch("/api/ideas", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const result = (await response.json().catch(() => ({}))) as {
-        idea?: { id?: string };
-        error?: string;
-      };
-
-      if (!response.ok) {
-        throw new Error(result.error ?? "Unable to save your draft right now.");
-      }
-
-      setSavedIdeaId(typeof result.idea?.id === "string" ? result.idea.id : null);
+      const ideaId = await saveIdea(payload);
+      setSavedIdeaId(ideaId);
       setState("ready");
       form.reset();
     } catch (error) {
       setState("idle");
       setErrorMessage(error instanceof Error ? error.message : "Unable to save your draft right now.");
+    }
+  }
+
+  async function onCheckout() {
+    if (state === "saving" || state === "checkout") return;
+
+    setCheckoutError(null);
+    setErrorMessage(null);
+
+    if (savedIdeaId) {
+      try {
+        setState("checkout");
+        await startCheckout(savedIdeaId);
+      } catch (error) {
+        setState("ready");
+        setCheckoutError(error instanceof Error ? error.message : "Unable to start checkout right now.");
+      }
+      return;
+    }
+
+    const form = formRef.current;
+    if (!form) return;
+    if (!form.reportValidity()) return;
+
+    setState("checkout");
+
+    const formData = new FormData(form);
+    const payload = {
+      title: String(formData.get("title") ?? ""),
+      summary: String(formData.get("summary") ?? ""),
+      details: String(formData.get("details") ?? "")
+    };
+
+    try {
+      const ideaId = await saveIdea(payload);
+      if (!ideaId) {
+        throw new Error("Idea draft saved but checkout could not start. Please try again.");
+      }
+      setSavedIdeaId(ideaId);
+      await startCheckout(ideaId);
+    } catch (error) {
+      setState("ready");
+      setCheckoutError(error instanceof Error ? error.message : "Unable to start checkout right now.");
     }
   }
 
@@ -136,7 +208,7 @@ export default function SubmitIdeaPage() {
 
       <SignedIn>
         <section className="glass" style={{ padding: "2rem" }}>
-          <form onSubmit={onSubmit} className="grid" style={{ gap: "1.5rem" }}>
+          <form ref={formRef} onSubmit={onSubmit} className="grid" style={{ gap: "1.5rem" }}>
             <label className="grid" style={{ gap: "0.6rem" }}>
               <span style={{ fontWeight: 600, color: "var(--text)" }}>Title</span>
               <input className="input" name="title" placeholder="Short, clear concept name" required maxLength={120} />
@@ -175,11 +247,11 @@ export default function SubmitIdeaPage() {
             </div>
 
             <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-              <button className="btn primary" type="submit" disabled={state === "saving"}>
+              <button className="btn primary" type="submit" disabled={state === "saving" || state === "checkout"}>
                 {state === "saving" ? "Saving Draft..." : "Save Draft"}
               </button>
-              <button className="btn success" type="button">
-                Continue to Stripe Checkout
+              <button className="btn success" type="button" onClick={onCheckout} disabled={state === "saving" || state === "checkout"}>
+                {state === "checkout" ? "Redirecting to Stripe..." : "Continue to Stripe Checkout"}
               </button>
             </div>
 
@@ -208,6 +280,19 @@ export default function SubmitIdeaPage() {
                 }}
               >
                 <p style={{ margin: 0, color: "var(--danger)", fontWeight: 600 }}>{errorMessage}</p>
+              </div>
+            ) : null}
+
+            {checkoutError ? (
+              <div
+                style={{
+                  padding: "1rem",
+                  borderRadius: "16px",
+                  background: "linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.14))",
+                  border: "2px solid rgba(239, 68, 68, 0.2)"
+                }}
+              >
+                <p style={{ margin: 0, color: "var(--danger)", fontWeight: 600 }}>{checkoutError}</p>
               </div>
             ) : null}
           </form>

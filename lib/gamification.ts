@@ -44,7 +44,7 @@ export type AchievementRateMap = Record<string, AchievementRate>;
 
 export const journeyStages: JourneyStage[] = [
   { id: "draft", label: "Drafted" },
-  { id: "submitted", label: "Submitted" },
+  { id: "payment", label: "Payment" },
   { id: "review", label: "In Review" },
   { id: "decision", label: "Decision" }
 ];
@@ -61,9 +61,9 @@ export const statusMeta: Record<
 > = {
   draft: {
     label: "Draft",
-    color: "var(--text-muted)",
+    color: "var(--primary)",
     helper: "Idea draft is saved but not submitted.",
-    nextStep: "Finish details and submit when ready.",
+    nextStep: "Submit this idea to complete checkout.",
     checkpoint: 1
   },
   payment_pending: {
@@ -74,7 +74,7 @@ export const statusMeta: Record<
     checkpoint: 2
   },
   submitted: {
-    label: "Under Review",
+    label: "In Review",
     color: "var(--accent)",
     helper: "Admin team is evaluating this idea.",
     nextStep: "Track messages while it is in queue.",
