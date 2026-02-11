@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useClerk, useUser } from "@clerk/nextjs";
+import { SignOutButton, useUser } from "@clerk/nextjs";
 
 type AccountMenuProps = {
   dashboardHref: string;
 };
 
 export function AccountMenu({ dashboardHref }: AccountMenuProps) {
-  const { signOut } = useClerk();
   const { user } = useUser();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -95,25 +94,24 @@ export function AccountMenu({ dashboardHref }: AccountMenuProps) {
             Go to dashboard
           </a>
 
-          <button
-            type="button"
-            style={{
-              width: "100%",
-              textAlign: "left",
-              border: "none",
-              background: "transparent",
-              padding: "0.8rem 1rem",
-              color: "var(--danger)",
-              fontWeight: 600,
-              cursor: "pointer"
-            }}
-            onClick={() => {
-              setOpen(false);
-              void signOut({ redirectUrl: "/" });
-            }}
-          >
-            Sign out
-          </button>
+          <SignOutButton redirectUrl="/">
+            <button
+              type="button"
+              style={{
+                width: "100%",
+                textAlign: "left",
+                border: "none",
+                background: "transparent",
+                padding: "0.8rem 1rem",
+                color: "var(--danger)",
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
+              onClick={() => setOpen(false)}
+            >
+              Sign out
+            </button>
+          </SignOutButton>
         </div>
       ) : null}
     </div>

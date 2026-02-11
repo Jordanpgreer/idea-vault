@@ -499,7 +499,7 @@ html[data-theme="night"] ::-webkit-scrollbar-thumb {
 
 .theme-toggle-track {
   position: relative;
-  width: 86px;
+  width: 76px;
   height: 36px;
   display: inline-flex;
   align-items: center;
@@ -507,14 +507,22 @@ html[data-theme="night"] ::-webkit-scrollbar-thumb {
   border-radius: 999px;
   border: 1px solid rgba(99, 102, 241, 0.3);
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(228, 235, 255, 0.88));
-  padding: 0 11px;
+  padding: 0 9px;
 }
 
-.theme-toggle-label {
-  font-size: 0.72rem;
-  font-weight: 700;
+.theme-toggle-icon {
+  font-size: 0.86rem;
+  line-height: 1;
   color: var(--text-soft);
-  letter-spacing: 0.02em;
+  opacity: 0.85;
+}
+
+.theme-toggle-icon.sun {
+  transform: translateX(1px);
+}
+
+.theme-toggle-icon.moon {
+  transform: translateX(-1px);
 }
 
 .theme-toggle-knob {
@@ -530,7 +538,7 @@ html[data-theme="night"] ::-webkit-scrollbar-thumb {
 }
 
 .theme-toggle-knob.is-night {
-  transform: translateX(50px);
+  transform: translateX(40px);
   background: linear-gradient(135deg, #7b95ff, #5dd8ff);
   box-shadow: 0 4px 12px rgba(93, 174, 255, 0.35);
 }
@@ -538,6 +546,39 @@ html[data-theme="night"] ::-webkit-scrollbar-thumb {
 html[data-theme="night"] .theme-toggle-track {
   border-color: rgba(117, 149, 255, 0.45);
   background: linear-gradient(135deg, rgba(20, 31, 76, 0.88), rgba(26, 41, 98, 0.88));
+}
+
+html[data-theme="night"] .landing-preview-shell,
+html[data-theme="night"] .landing-workflow,
+html[data-theme="night"] .landing-faq {
+  background: linear-gradient(135deg, rgba(17, 29, 78, 0.92), rgba(20, 35, 92, 0.9)) !important;
+  border-color: rgba(112, 146, 255, 0.3) !important;
+}
+
+html[data-theme="night"] .landing-preview-frame {
+  background: rgba(16, 29, 77, 0.8) !important;
+  border-color: rgba(106, 140, 255, 0.26) !important;
+}
+
+html[data-theme="night"] .landing-preview-card,
+html[data-theme="night"] .landing-step-card,
+html[data-theme="night"] .landing-faq-card,
+html[data-theme="night"] .landing-feature-card {
+  background: rgba(20, 34, 88, 0.92) !important;
+  border-color: rgba(119, 151, 255, 0.28) !important;
+  color: var(--text) !important;
+}
+
+html[data-theme="night"] .landing-page p,
+html[data-theme="night"] .landing-page h2,
+html[data-theme="night"] .landing-page h3 {
+  color: var(--text) !important;
+}
+
+html[data-theme="night"] .landing-page .page-subtitle,
+html[data-theme="night"] .landing-page .landing-faq-card p,
+html[data-theme="night"] .landing-page .landing-step-card p {
+  color: var(--text-soft) !important;
 }
 
 @media (max-width: 900px) {
@@ -570,13 +611,13 @@ html[data-theme="night"] .theme-toggle-track {
   }
 
   .theme-toggle-track {
-    width: 78px;
+    width: 70px;
     height: 33px;
-    padding: 0 10px;
+    padding: 0 8px;
   }
 
-  .theme-toggle-label {
-    font-size: 0.69rem;
+  .theme-toggle-icon {
+    font-size: 0.78rem;
   }
 
   .theme-toggle-knob {
@@ -587,23 +628,44 @@ html[data-theme="night"] .theme-toggle-track {
   }
 
   .theme-toggle-knob.is-night {
-    transform: translateX(45px);
+    transform: translateX(37px);
   }
 }
 
 @media (max-width: 640px) {
   .site-header-frame {
-    align-items: flex-start !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.55rem;
+    align-items: stretch !important;
   }
 
   .site-header-brand {
-    min-width: max-content;
+    min-width: 0;
+    max-width: 100%;
   }
 
   .site-header-logo {
     width: 36px !important;
     height: 36px !important;
     border-radius: 11px !important;
+  }
+
+  .site-header-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 66vw;
+  }
+
+  .site-header-nav {
+    max-width: 100%;
+    padding-right: 0.2rem;
+  }
+
+  .site-header-nav .btn {
+    padding: 0.48rem 0.84rem !important;
+    font-size: 0.78rem !important;
   }
 }
 

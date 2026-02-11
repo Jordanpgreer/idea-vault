@@ -39,7 +39,12 @@ export function ThemeToggle() {
       disabled={!isReady}
     >
       <span className="theme-toggle-track">
-        <span className="theme-toggle-label">{mode === "day" ? "Day" : "Night"}</span>
+        <span className="theme-toggle-icon sun" aria-hidden>
+          ☀
+        </span>
+        <span className="theme-toggle-icon moon" aria-hidden>
+          ☾
+        </span>
         <span className={`theme-toggle-knob ${mode === "night" ? "is-night" : ""}`} />
       </span>
     </button>

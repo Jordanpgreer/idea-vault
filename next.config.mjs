@@ -6,7 +6,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   typedRoutes: true,
-  outputFileTracingRoot: __dirname
+  outputFileTracingRoot: __dirname,
+  turbopack: {
+    root: __dirname
+  }
 };
 
 export default nextConfig;
