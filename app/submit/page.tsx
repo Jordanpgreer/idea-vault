@@ -128,7 +128,7 @@ export default function SubmitIdeaPage() {
           <p className="page-subtitle" style={{ margin: "1rem auto 2rem", maxWidth: "52ch" }}>
             Idea submission is only available for authenticated users. Create an account or sign in to continue.
           </p>
-          <Link href="/sign-in" className="btn primary">
+          <Link href={"/sign-in" as any} className="btn primary">
             Sign In to Submit
           </Link>
         </section>

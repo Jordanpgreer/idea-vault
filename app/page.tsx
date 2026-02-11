@@ -130,7 +130,7 @@ export default function HomePage() {
               </Link>
             </SignedIn>
             <SignedOut>
-              <Link href="/sign-up" className="btn primary">
+              <Link href={"/sign-up" as any} className="btn primary">
                 Get Started
               </Link>
             </SignedOut>
@@ -563,7 +563,7 @@ export default function HomePage() {
               </Link>
             </SignedIn>
             <SignedOut>
-              <Link href="/sign-up" className="btn primary">
+              <Link href={"/sign-up" as any} className="btn primary">
                 Create Free Account
               </Link>
             </SignedOut>

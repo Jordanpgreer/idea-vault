@@ -131,7 +131,7 @@ export async function SiteHeader() {
           <ThemeToggle />
           <SignedOut>
             <Link
-              href="/sign-in"
+              href={"/sign-in" as any}
               className="btn"
               style={{
                 padding: "0.6rem 1.2rem",
@@ -141,7 +141,7 @@ export async function SiteHeader() {
               Sign In
             </Link>
             <Link
-              href="/sign-up"
+              href={"/sign-up" as any}
               className="btn primary"
               style={{
                 padding: "0.6rem 1.2rem",

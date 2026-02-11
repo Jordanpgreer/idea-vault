@@ -91,7 +91,7 @@ export default function SignInPage() {
         <p style={{ textAlign: "center", marginTop: "1.5rem", color: "var(--text-soft)" }}>
           Don&apos;t have an account?{" "}
           <Link
-            href="/sign-up"
+            href={"/sign-up" as any}
             style={{
               color: "var(--primary)",
               fontWeight: 700,
