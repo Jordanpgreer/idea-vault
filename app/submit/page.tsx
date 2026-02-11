@@ -193,8 +193,7 @@ export default function SubmitIdeaPage() {
                 }}
               >
                 <p style={{ margin: 0, color: "var(--success)", fontWeight: 600 }}>
-                  Draft saved{savedIdeaId ? ` (${savedIdeaId})` : ""}. Next step is Stripe Checkout, then webhook marks
-                  idea as submitted.
+                  Draft saved{savedIdeaId ? ` (${savedIdeaId})` : ""}.
                 </p>
               </div>
             ) : null}

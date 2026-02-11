@@ -342,17 +342,18 @@ export default function DashboardPage() {
                     return (
                       <article
                         key={idea.id}
+                        className="journey-idea-card"
                         style={{
                           padding: "0.9rem",
                           borderRadius: "14px",
-                          border: "1px solid rgba(99, 102, 241, 0.15)",
-                          background: "rgba(255, 255, 255, 0.65)"
+                          border: "1px solid var(--journey-card-border)",
+                          background: "var(--journey-card-bg)"
                         }}
                       >
                         <div style={{ display: "flex", justifyContent: "space-between", gap: "0.65rem", flexWrap: "wrap", alignItems: "center" }}>
                           <div>
                             <p style={{ margin: 0, color: "var(--text)", fontWeight: 700 }}>{idea.title}</p>
-                            <p style={{ margin: "0.2rem 0 0", color: "var(--text-muted)", fontSize: "0.82rem" }}>
+                            <p style={{ margin: "0.2rem 0 0", color: "var(--text-soft)", fontSize: "0.82rem" }}>
                               Submitted: {formatDate(idea.createdAt)}
                             </p>
                           </div>
@@ -388,8 +389,8 @@ export default function DashboardPage() {
                                   textAlign: "center",
                                   fontSize: "0.77rem",
                                   fontWeight: 700,
-                                  background: isReached ? `${entry.color}22` : "rgba(148, 163, 184, 0.12)",
-                                  border: `1px solid ${isReached ? `${entry.color}60` : "rgba(148, 163, 184, 0.2)"}`,
+                                  background: isReached ? `${entry.color}22` : "var(--journey-stage-bg)",
+                                  border: `1px solid ${isReached ? `${entry.color}60` : "var(--journey-stage-border)"}`,
                                   color: isReached ? entry.color : "var(--text-muted)"
                                 }}
                               >
