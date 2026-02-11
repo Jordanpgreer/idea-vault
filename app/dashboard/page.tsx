@@ -278,6 +278,20 @@ export default function DashboardPage() {
         <p className="page-subtitle" style={{ marginTop: "0.95rem", maxWidth: "62ch" }}>
           Every idea moves through stages. Focus on unlocking achievements and improving outcomes over time.
         </p>
+        <div
+          className="glass"
+          style={{
+            marginTop: "1rem",
+            padding: "0.8rem 1rem",
+            borderRadius: "14px",
+            background: "linear-gradient(135deg, rgba(34, 211, 238, 0.14), rgba(236, 72, 153, 0.12))",
+            borderColor: "rgba(34, 211, 238, 0.35)"
+          }}
+        >
+          <p style={{ margin: 0, color: "var(--text)", fontWeight: 700 }}>
+            A $1 submission gives you access to a 10% profit-share opportunity if your idea is selected and launched.
+          </p>
+        </div>
       </section>
 
       <SignedOut>
