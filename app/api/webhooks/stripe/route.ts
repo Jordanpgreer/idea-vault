@@ -46,6 +46,8 @@ export async function POST(request: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const ideaId = session.metadata?.ideaId;
+    const stripeSessionId = session.id;
+    const amountCents = typeof session.amount_total === "number" ? session.amount_total : 100;
 
     if (!ideaId) {
       return NextResponse.json({ error: "Missing metadata.ideaId" }, { status: 400 });
@@ -56,11 +58,26 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Supabase is not configured" }, { status: 500 });
     }
 
+    const paymentUpsert = await supabase.from("payments").upsert(
+      {
+        idea_id: ideaId,
+        stripe_session_id: stripeSessionId,
+        amount_cents: amountCents,
+        status: "paid",
+        paid_at: new Date().toISOString()
+      },
+      { onConflict: "stripe_session_id" }
+    );
+
+    if (paymentUpsert.error) {
+      return NextResponse.json({ error: paymentUpsert.error.message }, { status: 500 });
+    }
+
     const { error } = await supabase
       .from("ideas")
-      .update({ status: "submitted" })
+      .update({ status: "submitted", submitted_at: new Date().toISOString() })
       .eq("id", ideaId)
-      .eq("status", "payment_pending");
+      .in("status", ["draft", "payment_pending"]);
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });

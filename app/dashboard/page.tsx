@@ -39,7 +39,47 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [checkoutIdeaId, setCheckoutIdeaId] = useState<string | null>(null);
+  const [verifyIdeaId, setVerifyIdeaId] = useState<string | null>(null);
   const [checkoutActionError, setCheckoutActionError] = useState<string | null>(null);
+  const [paymentNotice, setPaymentNotice] = useState<string | null>(null);
+
+  async function loadDashboardData() {
+    setIsLoading(true);
+    setLoadError(null);
+
+    try {
+      const [ideasResponse, messagesResponse, statsResponse] = await Promise.all([
+        fetch("/api/ideas", { method: "GET", cache: "no-store" }),
+        fetch("/api/messages", { method: "GET", cache: "no-store" }),
+        fetch("/api/achievements/stats", { method: "GET", cache: "no-store" })
+      ]);
+
+      const ideasPayload = (await ideasResponse.json().catch(() => ({}))) as IdeasResponse;
+      const messagesPayload = (await messagesResponse.json().catch(() => ({}))) as MessagesResponse;
+      const statsPayload = (await statsResponse.json().catch(() => ({}))) as AchievementStatsResponse;
+
+      if (!ideasResponse.ok) {
+        throw new Error(ideasPayload.error ?? "Unable to load your submissions right now.");
+      }
+      if (!messagesResponse.ok) {
+        throw new Error(messagesPayload.error ?? "Unable to load your updates right now.");
+      }
+      if (!statsResponse.ok) {
+        throw new Error(statsPayload.error ?? "Unable to load achievement statistics right now.");
+      }
+
+      setMyIdeas(Array.isArray(ideasPayload.ideas) ? ideasPayload.ideas : []);
+      setMyMessages(Array.isArray(messagesPayload.messages) ? messagesPayload.messages : []);
+      setAchievementRates(statsPayload.rates ?? {});
+    } catch (error) {
+      setMyIdeas([]);
+      setMyMessages([]);
+      setAchievementRates({});
+      setLoadError(error instanceof Error ? error.message : "Unable to load your dashboard right now.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -53,53 +93,49 @@ export default function DashboardPage() {
       return;
     }
 
+    void loadDashboardData();
+  }, [isLoaded, userId]);
+
+  useEffect(() => {
+    if (!isLoaded || !userId) return;
+    const params = new URLSearchParams(window.location.search);
+    const checkoutFlag = params.get("checkout");
+    const sessionId = params.get("session_id");
+    if (checkoutFlag !== "success" || !sessionId) return;
+
     let isCancelled = false;
 
-    async function loadDashboardData() {
-      setIsLoading(true);
-      setLoadError(null);
-
+    async function verifyOnReturn() {
       try {
-        const [ideasResponse, messagesResponse, statsResponse] = await Promise.all([
-          fetch("/api/ideas", { method: "GET", cache: "no-store" }),
-          fetch("/api/messages", { method: "GET", cache: "no-store" }),
-          fetch("/api/achievements/stats", { method: "GET", cache: "no-store" })
-        ]);
+        const response = await fetch("/api/checkout/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId })
+        });
+        const payload = (await response.json().catch(() => ({}))) as { verified?: boolean; error?: string };
 
-        const ideasPayload = (await ideasResponse.json().catch(() => ({}))) as IdeasResponse;
-        const messagesPayload = (await messagesResponse.json().catch(() => ({}))) as MessagesResponse;
-        const statsPayload = (await statsResponse.json().catch(() => ({}))) as AchievementStatsResponse;
+        if (isCancelled) return;
 
-        if (!ideasResponse.ok) {
-          throw new Error(ideasPayload.error ?? "Unable to load your submissions right now.");
-        }
-        if (!messagesResponse.ok) {
-          throw new Error(messagesPayload.error ?? "Unable to load your updates right now.");
-        }
-        if (!statsResponse.ok) {
-          throw new Error(statsPayload.error ?? "Unable to load achievement statistics right now.");
+        if (!response.ok) {
+          setPaymentNotice(payload.error ?? "Payment verification could not be completed yet. Please refresh in a moment.");
+          return;
         }
 
-        if (!isCancelled) {
-          setMyIdeas(Array.isArray(ideasPayload.ideas) ? ideasPayload.ideas : []);
-          setMyMessages(Array.isArray(messagesPayload.messages) ? messagesPayload.messages : []);
-          setAchievementRates(statsPayload.rates ?? {});
+        if (payload.verified) {
+          setPaymentNotice("Payment confirmed. Your idea is now in review.");
+        } else {
+          setPaymentNotice("Payment is still processing. Refresh in a moment.");
         }
-      } catch (error) {
+
+        void loadDashboardData();
+      } catch {
         if (!isCancelled) {
-          setMyIdeas([]);
-          setMyMessages([]);
-          setAchievementRates({});
-          setLoadError(error instanceof Error ? error.message : "Unable to load your dashboard right now.");
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoading(false);
+          setPaymentNotice("Payment verification could not be completed yet. Please refresh in a moment.");
         }
       }
     }
 
-    void loadDashboardData();
+    void verifyOnReturn();
 
     return () => {
       isCancelled = true;
@@ -184,6 +220,34 @@ export default function DashboardPage() {
     } catch (error) {
       setCheckoutIdeaId(null);
       setCheckoutActionError(error instanceof Error ? error.message : "Unable to open checkout right now.");
+    }
+  }
+
+  async function onVerifyPayment(ideaId: string) {
+    if (verifyIdeaId) return;
+
+    setVerifyIdeaId(ideaId);
+    setCheckoutActionError(null);
+    setPaymentNotice(null);
+
+    try {
+      const response = await fetch("/api/checkout/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ideaId })
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as { verified?: boolean; error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Unable to verify payment right now.");
+      }
+
+      setPaymentNotice(payload.verified ? "Payment confirmed. Your idea is now in review." : "No completed payment found yet.");
+      await loadDashboardData();
+    } catch (error) {
+      setCheckoutActionError(error instanceof Error ? error.message : "Unable to verify payment right now.");
+    } finally {
+      setVerifyIdeaId(null);
     }
   }
 
@@ -357,6 +421,22 @@ export default function DashboardPage() {
                 </div>
               </div>
 
+              {paymentNotice ? (
+                <div
+                  style={{
+                    marginTop: "0.9rem",
+                    padding: "0.8rem",
+                    borderRadius: "12px",
+                    background: "linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.12))",
+                    border: "1px solid rgba(16, 185, 129, 0.28)",
+                    color: "var(--success)",
+                    fontWeight: 700
+                  }}
+                >
+                  {paymentNotice}
+                </div>
+              ) : null}
+
               {recentIdeas.length === 0 ? (
                 <div style={{ marginTop: "0.9rem" }}>
                   <p style={{ marginTop: 0, marginBottom: "0.45rem", fontWeight: 700, color: "var(--text)" }}>No submissions yet</p>
@@ -507,10 +587,20 @@ export default function DashboardPage() {
                               className="btn success"
                               type="button"
                               onClick={() => onCompleteCheckout(idea.id)}
-                              disabled={checkoutIdeaId === idea.id}
+                              disabled={checkoutIdeaId === idea.id || verifyIdeaId === idea.id}
                             >
-                              {checkoutIdeaId === idea.id ? "Redirecting..." : "Pay $1 and Submit"}
+                              {checkoutIdeaId === idea.id ? "Redirecting..." : idea.status === "draft" ? "Pay $1 and Submit" : "Complete Payment"}
                             </button>
+                            {idea.status === "payment_pending" ? (
+                              <button
+                                className="btn"
+                                type="button"
+                                onClick={() => onVerifyPayment(idea.id)}
+                                disabled={verifyIdeaId === idea.id || checkoutIdeaId === idea.id}
+                              >
+                                {verifyIdeaId === idea.id ? "Verifying..." : "I Already Paid - Verify"}
+                              </button>
+                            ) : null}
                             <Link href="/submit" className="btn">
                               Edit in Submit Form
                             </Link>

@@ -70,10 +70,19 @@ export async function POST(request: Request) {
   if (ideaLookup.data.status === "submitted" || ideaLookup.data.status === "approved_initial" || ideaLookup.data.status === "rejected") {
     return NextResponse.json({ error: "This idea has already been submitted and reviewed." }, { status: 400 });
   }
+  if (ideaLookup.data.status === "payment_pending") {
+    return NextResponse.json(
+      {
+        error:
+          "Payment is already in progress for this idea. If you already paid, refresh your dashboard and use verify payment."
+      },
+      { status: 409 }
+    );
+  }
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
-    success_url: `${appUrl}/dashboard?checkout=success`,
+    success_url: `${appUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/submit?checkout=cancel`,
     line_items: [
       {
@@ -87,7 +96,8 @@ export async function POST(request: Request) {
         quantity: 1
       }
     ],
-    metadata: { ideaId }
+    metadata: { ideaId },
+    client_reference_id: ideaId
   });
 
   const updateResult = await supabase
@@ -98,6 +108,17 @@ export async function POST(request: Request) {
 
   if (updateResult.error) {
     return NextResponse.json({ error: updateResult.error.message }, { status: 500 });
+  }
+
+  const paymentInsert = await supabase.from("payments").insert({
+    idea_id: ideaId,
+    stripe_session_id: session.id,
+    amount_cents: appConfig.ideaPriceInCents,
+    status: "pending"
+  });
+
+  if (paymentInsert.error) {
+    return NextResponse.json({ error: paymentInsert.error.message }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, url: session.url });
