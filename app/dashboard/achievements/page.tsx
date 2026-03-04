@@ -114,7 +114,7 @@ export default function AchievementPage() {
         }}
       >
         <p className="pill">Achievement Center</p>
-        <h1 className="page-title" style={{ marginTop: "1rem" }}>
+        <h1 className="page-title" style={{ marginTop: "1rem", lineHeight: 1.14, paddingBottom: "0.08em" }}>
           Your creator progression
         </h1>
         <p className="page-subtitle" style={{ marginTop: "0.85rem", maxWidth: "62ch" }}>
@@ -166,6 +166,9 @@ export default function AchievementPage() {
             <section className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
               <article className="glass" style={{ padding: "1.25rem" }}>
                 <h2 style={{ marginTop: 0, marginBottom: "0.6rem", fontSize: "1.15rem" }}>All Achievements</h2>
+                <p style={{ marginTop: "-0.2rem", marginBottom: "0.7rem", color: "var(--text-soft)", fontSize: "0.9rem" }}>
+                  More coming soon.
+                </p>
                 <div className="grid" style={{ gap: "0.75rem", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
                   {achievements.map((achievement) => {
                     const progress = Math.max(0, Math.min(100, Math.round((achievement.current / achievement.target) * 100)));

@@ -1,17 +1,19 @@
 import Link from "next/link";
+import Image from "next/image";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { isAdminUser } from "@/lib/authz";
 import { AccountMenu } from "@/components/account-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
+import appLogo from "@/app/logo.png";
 
 const publicNavItems: Array<{ href: string; label: string }> = [{ href: "/", label: "Home" }];
 
 const userNavItems: Array<{ href: string; label: string }> = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/dashboard/achievements", label: "Achievements" },
   { href: "/submit", label: "Submit Idea" },
-  { href: "/messages", label: "Messages" }
+  { href: "/messages", label: "Idea Updates" },
+  { href: "/dashboard/achievements", label: "Achievements" }
 ];
 
 const adminNavItems: Array<{ href: string; label: string }> = [
@@ -24,7 +26,7 @@ export async function SiteHeader() {
   const { userId } = await auth();
   const user = userId ? await currentUser() : null;
   const showAdminNav = isAdminUser(user);
-  const brandHref = showAdminNav ? "/admin" : "/";
+  const brandHref = userId ? "/dashboard" : "/";
   const visiblePublicNavItems = userId ? [] : publicNavItems;
 
   return (
@@ -47,40 +49,42 @@ export async function SiteHeader() {
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: "0.8rem",
+            gap: "0.65rem",
             transition: "transform 0.2s ease"
           }}
         >
           <div
             className="site-header-logo"
             style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "12px",
-              background: "var(--gradient-ocean)",
+              width: "96px",
+              height: "96px",
+              background: "transparent",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)",
               position: "relative",
-              overflow: "hidden"
+              overflow: "visible"
             }}
           >
-            <div
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent)",
-                animation: "shine-logo 3s infinite"
-              }}
+            <Image
+              src={appLogo}
+              alt="Idea Vault logo"
+              fill
+              sizes="96px"
+              quality={100}
+              style={{ objectFit: "contain", imageRendering: "auto" }}
+              priority
             />
-            <span style={{ fontSize: "1.3rem", position: "relative", zIndex: 1 }}>{"\uD83D\uDCA1"}</span>
           </div>
           <strong
             className="site-header-title"
             style={{
+              display: "block",
               letterSpacing: "0.01em",
               fontSize: "1.15rem",
+              lineHeight: 1,
+              position: "relative",
+              top: "-2px",
               background: "var(--gradient-cosmic)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",

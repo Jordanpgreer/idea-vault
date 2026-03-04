@@ -10,6 +10,7 @@ type IdeaRow = {
   summary: string;
   details: string;
   status: string;
+  review_started_at: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -20,64 +21,77 @@ type UserRow = {
 };
 
 export async function GET() {
-  const { userId } = await auth();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const clerkUser = await currentUser();
-  if (!isAdminUser(clerkUser)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
-  const supabase = getSupabaseAdminClient();
-  if (!supabase) {
-    return NextResponse.json({ error: "Supabase is not configured." }, { status: 503 });
-  }
-
-  const [{ count: totalIdeas, error: totalError }, { data: pendingIdeas, error: pendingError }] = await Promise.all([
-    supabase.from("ideas").select("*", { count: "exact", head: true }),
-    supabase
-      .from("ideas")
-      .select("id, submitter_id, title, summary, details, status, created_at, updated_at")
-      .eq("status", "submitted")
-      .order("created_at", { ascending: true })
-  ]);
-
-  if (totalError) {
-    return NextResponse.json({ error: totalError.message }, { status: 500 });
-  }
-  if (pendingError) {
-    return NextResponse.json({ error: pendingError.message }, { status: 500 });
-  }
-
-  const queueRows = (pendingIdeas ?? []) as IdeaRow[];
-  const submitterIds = [...new Set(queueRows.map((row) => row.submitter_id))];
-  let submitterEmailById = new Map<string, string>();
-
-  if (submitterIds.length > 0) {
-    const { data: users, error: usersError } = await supabase.from("users").select("id, email").in("id", submitterIds);
-    if (usersError) {
-      return NextResponse.json({ error: usersError.message }, { status: 500 });
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    submitterEmailById = new Map((users ?? []).map((user) => [user.id, (user as UserRow).email]));
-  }
+    const clerkUser = await currentUser();
+    if (!isAdminUser(clerkUser)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
 
-  return NextResponse.json({
-    stats: {
-      totalIdeas: totalIdeas ?? 0,
-      pending: queueRows.length
-    },
-    items: queueRows.map((row) => ({
-      id: row.id,
-      title: row.title,
-      summary: row.summary,
-      details: row.details,
-      status: row.status,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-      submitterEmail: submitterEmailById.get(row.submitter_id) ?? "unknown@example.com"
-    }))
-  });
+    const supabase = getSupabaseAdminClient();
+    if (!supabase) {
+      return NextResponse.json({ error: "Supabase is not configured." }, { status: 503 });
+    }
+
+    const [{ count: totalIdeas, error: totalError }, { data: pendingIdeas, error: pendingError }] = await Promise.all([
+      supabase.from("ideas").select("*", { count: "exact", head: true }),
+      supabase
+        .from("ideas")
+        .select("id, submitter_id, title, summary, details, status, review_started_at, created_at, updated_at")
+        .eq("status", "submitted")
+        .order("created_at", { ascending: true })
+    ]);
+
+    if (totalError) {
+      return NextResponse.json({ error: totalError.message }, { status: 500 });
+    }
+    if (pendingError) {
+      return NextResponse.json({ error: pendingError.message }, { status: 500 });
+    }
+
+    const queueRows = (pendingIdeas ?? []) as IdeaRow[];
+    if (queueRows[0] && !queueRows[0].review_started_at) {
+      await supabase
+        .from("ideas")
+        .update({ review_started_at: new Date().toISOString() })
+        .eq("id", queueRows[0].id)
+        .is("review_started_at", null);
+      queueRows[0].review_started_at = new Date().toISOString();
+    }
+    const submitterIds = [...new Set(queueRows.map((row) => row.submitter_id))];
+    let submitterEmailById = new Map<string, string>();
+
+    if (submitterIds.length > 0) {
+      const { data: users, error: usersError } = await supabase.from("users").select("id, email").in("id", submitterIds);
+      if (usersError) {
+        return NextResponse.json({ error: usersError.message }, { status: 500 });
+      }
+
+      submitterEmailById = new Map((users ?? []).map((user) => [user.id, (user as UserRow).email]));
+    }
+
+    return NextResponse.json({
+      stats: {
+        totalIdeas: totalIdeas ?? 0,
+        pending: queueRows.length
+      },
+      items: queueRows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        summary: row.summary,
+        details: row.details,
+        status: row.status,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        submitterEmail: submitterEmailById.get(row.submitter_id) ?? "unknown@example.com"
+      }))
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unexpected error while loading review queue.";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

@@ -11,6 +11,7 @@ export type Idea = {
   summary: string;
   details: string;
   status: IdeaStatus;
+  reviewStartedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   submitterId: string;

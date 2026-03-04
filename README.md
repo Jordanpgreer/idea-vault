@@ -12,7 +12,12 @@ A sleek, high-tech web app for paid business-idea submissions.
 
 ## Product Summary
 
-- Users submit ideas for `$1` each.
+- Users can submit ideas via:
+  - `$1` one-time checkout per idea, or
+  - monthly subscriptions:
+    - `$3/month` for 5 ideas
+    - `$5/month` for 8 ideas
+- Monthly subscription idea limits reset each month and do not roll over.
 - Ideas are private.
 - Users can only see their own ideas and messages.
 - Admin can review all ideas and approve/reject.
@@ -45,6 +50,9 @@ npm run dev
 ## Important
 
 - Payment verification must happen in Stripe webhook before marking an idea as paid/submitted.
+- Configure Stripe recurring price ids in `.env.local`:
+  - `STRIPE_SUB_PRICE_5_ID`
+  - `STRIPE_SUB_PRICE_8_ID`
 - Replace mock data/services with real Supabase + Clerk in production.
 - See `docs/IMPLEMENTATION_PLAN.md` and `db/schema.sql`.
 - Admin access is controlled by Clerk `publicMetadata.role = "admin"` or by listing emails in `ADMIN_EMAILS` in `.env.local`.

@@ -64,19 +64,19 @@ export function AccountMenu({ dashboardHref }: AccountMenuProps) {
             right: 0,
             width: "260px",
             borderRadius: "18px",
-            border: "1px solid rgba(99, 102, 241, 0.22)",
-            background: "rgba(255, 255, 255, 0.96)",
+            border: "1px solid var(--line)",
+            background: "color-mix(in srgb, var(--panel) 92%, transparent)",
             backdropFilter: "blur(10px)",
-            boxShadow: "0 22px 40px rgba(15, 23, 42, 0.14)",
+            boxShadow: "0 18px 36px rgba(2, 6, 23, 0.28)",
             overflow: "hidden",
             zIndex: 80
           }}
         >
-          <div style={{ padding: "0.9rem 1rem", borderBottom: "1px solid rgba(148, 163, 184, 0.22)" }}>
+          <div style={{ padding: "0.9rem 1rem", borderBottom: "1px solid var(--line)" }}>
             <p style={{ margin: 0, fontWeight: 700, color: "var(--text)" }}>
               {user?.fullName || user?.username || "Account"}
             </p>
-            <p style={{ margin: "0.2rem 0 0", color: "var(--text-muted)", fontSize: "0.85rem" }}>
+            <p style={{ margin: "0.2rem 0 0", color: "var(--text-soft)", fontSize: "0.85rem" }}>
               {user?.primaryEmailAddress?.emailAddress || ""}
             </p>
           </div>
@@ -87,11 +87,26 @@ export function AccountMenu({ dashboardHref }: AccountMenuProps) {
               display: "block",
               padding: "0.8rem 1rem",
               color: "var(--text)",
-              borderBottom: "1px solid rgba(148, 163, 184, 0.16)"
+              borderBottom: "1px solid var(--line)",
+              background: "transparent"
             }}
             onClick={() => setOpen(false)}
           >
             Go to dashboard
+          </a>
+
+          <a
+            href="/dashboard/subscription"
+            style={{
+              display: "block",
+              padding: "0.8rem 1rem",
+              color: "var(--text)",
+              borderBottom: "1px solid var(--line)",
+              background: "transparent"
+            }}
+            onClick={() => setOpen(false)}
+          >
+            Manage subscription
           </a>
 
           <SignOutButton redirectUrl="/">

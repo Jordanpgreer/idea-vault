@@ -551,6 +551,56 @@ html[data-theme="night"] ::-webkit-scrollbar-thumb {
   box-shadow: 0 4px 12px rgba(93, 174, 255, 0.35);
 }
 
+.submit-idea-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.submit-idea-cta::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0) 36%,
+    rgba(255, 255, 255, 0.5) 48%,
+    rgba(255, 255, 255, 0.18) 56%,
+    rgba(255, 255, 255, 0) 68%
+  );
+  background-size: 220% 220%;
+  background-repeat: no-repeat;
+  background-position: -220% -140%;
+  pointer-events: none;
+  z-index: 2;
+  animation: submit-cta-gloss 4.8s ease-in-out infinite;
+}
+
+.submit-idea-cta:hover::after {
+  animation-duration: 3.6s;
+}
+
+.submit-idea-cta:disabled::after {
+  animation: none;
+  opacity: 0;
+}
+
+@keyframes submit-cta-gloss {
+  0% {
+    background-position: -220% -140%;
+  }
+  16% {
+    background-position: -220% -140%;
+  }
+  84% {
+    background-position: 220% 160%;
+  }
+  100% {
+    background-position: 220% 160%;
+  }
+}
+
 html[data-theme="night"] .theme-toggle-track {
   border-color: rgba(117, 149, 255, 0.45);
   background: linear-gradient(135deg, rgba(20, 31, 76, 0.88), rgba(26, 41, 98, 0.88));
@@ -690,5 +740,32 @@ html[data-theme="night"] .landing-page .landing-step-card p {
   .btn {
     padding: 0.75rem 1.2rem;
     font-size: 0.9rem;
+  }
+}
+
+.idea-update-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.idea-update-meta {
+  position: sticky;
+  top: 88px;
+}
+
+.idea-update-thread {
+  min-height: 320px;
+}
+
+@media (max-width: 900px) {
+  .idea-update-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .idea-update-meta {
+    position: static;
+    top: auto;
   }
 }

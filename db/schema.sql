@@ -16,6 +16,7 @@ create table if not exists public.ideas (
   details text not null,
   status text not null default 'draft' check (status in ('draft', 'payment_pending', 'submitted', 'approved_initial', 'rejected')),
   submitted_at timestamptz,
+  review_started_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -54,6 +55,33 @@ create table if not exists public.profit_share_agreements (
   percent numeric(5,2) not null default 10.00 check (percent > 0 and percent <= 100),
   terms_version text not null,
   accepted_at timestamptz not null default now()
+);
+
+alter table public.users
+add column if not exists stripe_customer_id text unique;
+
+create table if not exists public.user_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null unique references public.users(id) on delete cascade,
+  stripe_customer_id text not null,
+  stripe_subscription_id text not null unique,
+  plan_code text not null check (plan_code in ('starter_5', 'pro_8')),
+  monthly_idea_limit integer not null check (monthly_idea_limit > 0),
+  status text not null,
+  current_period_start timestamptz,
+  current_period_end timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.user_monthly_quotas (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  month_key text not null,
+  submitted_count integer not null default 0 check (submitted_count >= 0),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id, month_key)
 );
 
 alter table public.users enable row level security;

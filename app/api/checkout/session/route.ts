@@ -3,9 +3,11 @@ import { auth } from "@clerk/nextjs/server";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 import { appConfig } from "@/lib/config";
+import { consumeMonthlyQuotaSlot, getActiveSubscriptionForUser, getMonthKey } from "@/lib/subscription";
 
 const stripeSecret = process.env.STRIPE_SECRET_KEY;
 const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+const stripePriceId = process.env.STRIPE_PRICE_ID;
 const stripe = stripeSecret ? new Stripe(stripeSecret) : null;
 
 function getSupabaseAdminClient() {
@@ -80,22 +82,67 @@ export async function POST(request: Request) {
     );
   }
 
+  const activeSubscriptionResult = await getActiveSubscriptionForUser(supabase, userLookup.data.id);
+  if (activeSubscriptionResult.error) {
+    return NextResponse.json({ error: activeSubscriptionResult.error }, { status: 500 });
+  }
+
+  if (activeSubscriptionResult.subscription) {
+    const monthKey = getMonthKey();
+    const quotaResult = await consumeMonthlyQuotaSlot(
+      supabase,
+      userLookup.data.id,
+      activeSubscriptionResult.subscription.monthly_idea_limit,
+      monthKey
+    );
+
+    if (quotaResult.ok) {
+      const submittedUpdate = await supabase
+        .from("ideas")
+        .update({ status: "submitted", submitted_at: new Date().toISOString() })
+        .eq("id", ideaId)
+        .eq("submitter_id", userLookup.data.id)
+        .in("status", ["draft", "payment_pending"]);
+
+      if (submittedUpdate.error) {
+        return NextResponse.json({ error: submittedUpdate.error.message }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        ok: true,
+        usedSubscriptionQuota: true,
+        remainingQuota: quotaResult.remaining,
+        url: `${appUrl}/dashboard?checkout=subscription_success`
+      });
+    }
+  }
+
+  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = stripePriceId
+    ? [
+        {
+          price: stripePriceId,
+          quantity: 1
+        }
+      ]
+    : [
+        {
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name: "Idea Submission"
+            },
+            unit_amount: appConfig.ideaPriceInCents
+          },
+          quantity: 1
+        }
+      ];
+
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
     success_url: `${appUrl}/dashboard?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/submit?checkout=cancel`,
-    line_items: [
-      {
-        price_data: {
-          currency: "usd",
-          product_data: {
-            name: "Idea Submission"
-          },
-          unit_amount: appConfig.ideaPriceInCents
-        },
-        quantity: 1
-      }
-    ],
+    allow_promotion_codes: true,
+    line_items: lineItems,
     metadata: { ideaId },
     client_reference_id: ideaId
   });
