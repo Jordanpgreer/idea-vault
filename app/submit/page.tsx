@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { SignedIn, SignedOut } from "@clerk/nextjs";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import type { Idea } from "@/lib/types";
 
 const price = "$1.00";
@@ -14,8 +13,7 @@ type IdeasResponse = {
 };
 
 export default function SubmitIdeaPage() {
-  const searchParams = useSearchParams();
-  const draftId = searchParams.get("draftId");
+  const [draftId, setDraftId] = useState<string | null>(null);
   const [state, setState] = useState<"idle" | "saving" | "ready" | "checkout">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [savedIdeaId, setSavedIdeaId] = useState<string | null>(null);
@@ -26,6 +24,12 @@ export default function SubmitIdeaPage() {
     summary: "",
     details: ""
   });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const value = new URLSearchParams(window.location.search).get("draftId");
+    setDraftId(value);
+  }, []);
 
   useEffect(() => {
     let isCancelled = false;
