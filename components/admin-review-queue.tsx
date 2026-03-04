@@ -19,11 +19,13 @@ type QueueResponse = {
     pending: number;
   };
   items?: QueueItem[];
+  rejectedItems?: QueueItem[];
   error?: string;
 };
 
 export function AdminReviewQueue() {
   const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [rejectedItems, setRejectedItems] = useState<QueueItem[]>([]);
   const [totalIdeas, setTotalIdeas] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -53,12 +55,14 @@ export function AdminReviewQueue() {
 
         if (!isCancelled) {
           setQueue(Array.isArray(payload.items) ? payload.items : []);
+          setRejectedItems(Array.isArray(payload.rejectedItems) ? payload.rejectedItems : []);
           setTotalIdeas(payload.stats?.totalIdeas ?? 0);
         }
       } catch (error) {
         if (!isCancelled) {
           setLoadError(error instanceof Error ? error.message : "Unable to load review queue.");
           setQueue([]);
+          setRejectedItems([]);
           setTotalIdeas(0);
         }
       } finally {
@@ -189,6 +193,37 @@ export function AdminReviewQueue() {
           </div>
         ) : null
       )}
+
+      {!isLoading && !loadError ? (
+        <details className="glass" style={{ padding: "1rem" }}>
+          <summary style={{ cursor: "pointer", fontWeight: 700 }}>
+            Past Rejected Requests ({rejectedItems.length})
+          </summary>
+          <div className="grid" style={{ gap: "0.6rem", marginTop: "0.9rem" }}>
+            {rejectedItems.length > 0 ? (
+              rejectedItems.map((item) => (
+                <article
+                  key={item.id}
+                  style={{
+                    border: "1px solid var(--border)",
+                    borderRadius: "12px",
+                    padding: "0.75rem",
+                    background: "rgba(17, 30, 82, 0.45)"
+                  }}
+                >
+                  <p style={{ margin: 0, fontWeight: 700 }}>{item.title}</p>
+                  <p style={{ margin: "0.35rem 0", color: "var(--text-soft)" }}>{item.summary}</p>
+                  <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                    {item.submitterEmail} • Rejected {new Date(item.updatedAt).toLocaleString()}
+                  </p>
+                </article>
+              ))
+            ) : (
+              <p style={{ margin: 0, color: "var(--text-soft)" }}>No rejected requests yet.</p>
+            )}
+          </div>
+        </details>
+      ) : null}
     </section>
   );
 }

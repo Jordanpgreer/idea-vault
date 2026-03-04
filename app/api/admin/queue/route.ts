@@ -37,13 +37,22 @@ export async function GET() {
       return NextResponse.json({ error: "Supabase is not configured." }, { status: 503 });
     }
 
-    const [{ count: totalIdeas, error: totalError }, { data: pendingIdeas, error: pendingError }] = await Promise.all([
+    const [
+      { count: totalIdeas, error: totalError },
+      { data: pendingIdeas, error: pendingError },
+      { data: rejectedIdeas, error: rejectedError }
+    ] = await Promise.all([
       supabase.from("ideas").select("*", { count: "exact", head: true }),
       supabase
         .from("ideas")
         .select("id, submitter_id, title, summary, details, status, review_started_at, created_at, updated_at")
         .eq("status", "submitted")
-        .order("created_at", { ascending: true })
+        .order("created_at", { ascending: true }),
+      supabase
+        .from("ideas")
+        .select("id, submitter_id, title, summary, details, status, review_started_at, created_at, updated_at")
+        .eq("status", "rejected")
+        .order("updated_at", { ascending: false })
     ]);
 
     if (totalError) {
@@ -52,8 +61,12 @@ export async function GET() {
     if (pendingError) {
       return NextResponse.json({ error: pendingError.message }, { status: 500 });
     }
+    if (rejectedError) {
+      return NextResponse.json({ error: rejectedError.message }, { status: 500 });
+    }
 
     const queueRows = (pendingIdeas ?? []) as IdeaRow[];
+    const rejectedRows = (rejectedIdeas ?? []) as IdeaRow[];
     if (queueRows[0] && !queueRows[0].review_started_at) {
       await supabase
         .from("ideas")
@@ -62,7 +75,7 @@ export async function GET() {
         .is("review_started_at", null);
       queueRows[0].review_started_at = new Date().toISOString();
     }
-    const submitterIds = [...new Set(queueRows.map((row) => row.submitter_id))];
+    const submitterIds = [...new Set([...queueRows, ...rejectedRows].map((row) => row.submitter_id))];
     let submitterEmailById = new Map<string, string>();
 
     if (submitterIds.length > 0) {
@@ -80,6 +93,16 @@ export async function GET() {
         pending: queueRows.length
       },
       items: queueRows.map((row) => ({
+        id: row.id,
+        title: row.title,
+        summary: row.summary,
+        details: row.details,
+        status: row.status,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        submitterEmail: submitterEmailById.get(row.submitter_id) ?? "unknown@example.com"
+      })),
+      rejectedItems: rejectedRows.map((row) => ({
         id: row.id,
         title: row.title,
         summary: row.summary,
